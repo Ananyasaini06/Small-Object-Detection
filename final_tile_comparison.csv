@@ -1,0 +1,4 @@
+tile_size,images_evaluated,avg_latency_ms,avg_detections,small_object_macro_AP50_percent,classes_evaluated
+256x256,100,301.31,72.27,13.92,10
+512x512,100,133.47,52.88,28.42,10
+640x640,100,95.42,44.39,20.81,10
