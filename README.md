@@ -34,16 +34,40 @@ The project uses a pretrained YOLO11n model fine-tuned on the VisDrone dataset a
 6. Evaluate small object AP50 on a 100-image validation subset using a custom evaluation script.
 7. Generate side-by-side visual comparisons and performance graphs.
 
-## Preliminary Results
+## Results: Tile-Size Comparison
 
-The following results were obtained from 100 validation images. Small object AP50 is a custom estimate, not the official VisDrone benchmark metric.
+Experiments were conducted on a subset of 100 VisDrone validation images using a fine-tuned YOLO11n model and SAHI sliced inference.
 
-| Tile Size | Small Object AP50 | Avg. Latency per Image | Avg. Detections per Image |
+### Small-Object Detection Performance
+
+| Method | Small-Object Macro AP50 |
+|---|---:|
+| Normal YOLO | 16.38% |
+| SAHI with 512 × 512 tiles | 28.42% |
+| Absolute improvement | +12.04 percentage points |
+
+SAHI achieved approximately 73.5% relative improvement in custom small-object AP50 over normal YOLO on this subset.
+
+### Effect of Tile Size
+
+| Tile Size | Small-Object Macro AP50 | Average Latency per Image | Average Detections per Image |
 |---|---:|---:|---:|
 | 256 × 256 | 13.92% | 301.31 ms | 72.27 |
 | 512 × 512 | 28.42% | 133.47 ms | 52.88 |
 | 640 × 640 | 20.81% | 95.42 ms | 44.39 |
 
+### Observations
+
+- The 512 × 512 tile size achieved the highest measured small-object AP50 among the tested settings.
+- The 640 × 640 tile size had the lowest measured latency.
+- The 256 × 256 tile size generated the most detections but was the slowest.
+- Higher detection counts do not necessarily imply higher accuracy because detections can include false positives.
+
+### Evaluation Notes
+
+These are preliminary results from 100 validation images using a custom small-object evaluation procedure. They are not official VisDrone benchmark metrics. The custom evaluation defines a small object as a ground-truth or predicted box with both width and height no greater than 32 pixels and uses an IoU threshold of 0.50.
+
+SAHI may automatically change its postprocessing configuration at very low confidence thresholds. Therefore, differences in postprocessing remain a limitation when comparing SAHI with standard YOLO. Full-dataset evaluation and further checks are needed before generalizing these results.
 ### Key Observations
 
 - The 512 × 512 tile setting achieved the highest measured small object AP50 among the three tested settings.
