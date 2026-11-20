@@ -75,3 +75,5 @@ Open the [Colab launcher](https://colab.research.google.com/github/Ananyasaini06
 For a zero Faster R-CNN count, expand the diagnostics under the image panels. Check whether candidates belong to other COCO classes or fall below the slider. The table includes native postprocessed candidates before mapping. A zero count on one image does not establish zero validation AP.
 
 **Export the measured comparison:** Run updated Section 7 with Drive mounted and the checkpoint recovered. Its small github-results ZIP contains the matching benchmark files under results/<run ID>/. Extract those files for GitHub; keep weights, the full backup and VisDrone in Drive.
+
+The Live Detection section includes three unannotated VisDrone2019-DET validation images. Select a thumbnail and click **Compare detections**. Open the Faster R-CNN diagnostics to inspect each postprocessed COCO candidate, its confidence and whether it passed the display filters. [Sample image source](https://huggingface.co/datasets/banu4prasad/VisDrone-Dataset/tree/62fc5e7387775e8f1f4fa5e027555024124763fa/VisDrone2019-DET-val/images)

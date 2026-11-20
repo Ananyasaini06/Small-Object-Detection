@@ -49,11 +49,10 @@ class Detectors:
             rows = [[*box, score, COCO[label]] for box, score, label in zip(boxes, scores, labels)
                     if label in COCO]
             if diagnostics is not None:
-                categories = self.categories
-                for label in sorted(set(labels)):
-                    values = [s for c, s in zip(labels, scores) if c == label]
-                    diagnostics.append([categories[label], len(values), round(max(values), 4),
-                                        sum(s >= threshold for s in values), label in COCO])
+                for label, score in zip(labels, scores):
+                    diagnostics.append([self.categories[label], round(score, 5),
+                                        NAMES.get(COCO.get(label), "Outside shared classes"),
+                                        label in COCO and score >= threshold])
         preds = [{"class": int(c), "score": s, "box": [x,y,r,b]} for x,y,r,b,s,c in rows if c in NAMES and s >= threshold]
         torch.cuda.synchronize()
         return preds, (perf_counter()-start)*1000
