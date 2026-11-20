@@ -45,3 +45,9 @@ Select **Runtime → Change runtime type → T4 GPU**. For a demo with saved YOL
 ## Project files
 
 The working notebook calls `comparison.py` for the three-model benchmark, `evaluate.py` for the original AP50 calculation, `tile_experiments.py` for the tile study and `demo.py` for Gradio. The ZIP files contain historical results and figures. The archive keeps all 55 original cells, including pilot training and saved outputs. [Original notebook](archive/Small_Object_Detection.ipynb)
+
+## Report and live presentation
+
+[Read the project report (PDF)](report/P10-report.pdf). For the live presentation, run section 5 before class. It saves the three-model measurements and selection.txt beside the speed–accuracy graph. Selection prioritizes shared-class small AP50, then latency, then overall AP50. Section 6 shows the latest complete comparison matching the loaded checkpoint fingerprint. Use its evidence panel for the historical training curve, epoch table, tile results and any saved training outputs alongside the checkpoint.
+
+For the two-day submission, Faster R-CNN remains a COCO-pretrained transfer baseline. A controlled VisDrone fine-tune needs a new classification head, a separate training and validation run, and time to evaluate the resulting checkpoint. We have no measured training throughput or guaranteed T4 session for that additional experiment. The historical accuracy-first choice is SAHI 512. Run the shared-class benchmark to determine the three-way choice. Launch the temporary Gradio link during the presentation; the runtime must remain active.

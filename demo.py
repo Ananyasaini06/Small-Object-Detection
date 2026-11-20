@@ -1,8 +1,11 @@
 from PIL import ImageDraw, ImageOps
-from comparison import Detectors, METHODS, NAMES
+from pathlib import Path
+import hashlib
+import pandas as pd
+from comparison import Detectors, METHODS, NAMES, selection
 
 
-def launch(weights):
+def launch(weights, project=None):
     import gradio as gr
     models = Detectors(weights)
 
@@ -23,7 +26,7 @@ def launch(weights):
         return *outputs, statistics
 
     with gr.Blocks() as app:
-        gr.Markdown("# Small-object detection in aerial scenes\nCompare bicycle, car, truck, bus and motor detections.")
+        gr.Markdown("# Small-object detection in aerial scenes\nVehicles occupy only a few pixels in drone images. Upload one scene to see how full-image, tiled and region-based detectors handle it. All panels show the same five vehicle classes.")
         source = gr.Image(type="pil", sources=["upload"], label="Upload a JPG or PNG aerial image")
         threshold = gr.Slider(0.01, 0.95, value=0.25, step=0.01, label="Confidence threshold")
         button = gr.Button("Compare detections")
@@ -31,4 +34,32 @@ def launch(weights):
             outputs = [gr.Image(label=name, format="png", show_download_button=True) for name in METHODS]
         stats = gr.Dataframe(headers=["Model","Detections","Time (ms)"], interactive=False)
         button.click(compare,[source,threshold],[*outputs,stats],concurrency_limit=1)
+        assets = Path(__file__).resolve().parent
+        with gr.Accordion("Training, validation and testing evidence", open=False):
+            gr.Markdown("**Training.** Original 15-epoch VisDrone run. The curves and table use rounded validation logs from the archived notebook.")
+            gr.Image(str(assets/"figures/historical_epochs.png"), interactive=False, label="Historical validation curves")
+            gr.Dataframe(value=pd.read_csv(assets/"figures/historical_epochs.csv"), interactive=False)
+            run = Path(weights).parent.parent
+            if Path(weights).parent.name == "weights":
+                if (run/"results.csv").is_file():
+                    gr.Dataframe(value=pd.read_csv(run/"results.csv"), interactive=False, label="Loaded run: epoch history")
+                if (run/"results.png").is_file():
+                    gr.Image(str(run/"results.png"), label="Loaded run: training curves", interactive=False)
+            gr.Markdown("**Validation.** Historical custom small AP50: YOLO 16.38%, SAHI 512 28.42%. "
+                        "Among the tested tiles, 512 pixels gave the highest small AP50. "
+                        "These ten-class results support SAHI 512 as the historical accuracy-first choice.")
+            gr.Dataframe(value=pd.read_csv(assets/"final_tile_comparison.csv"), interactive=False)
+            gr.Markdown("**Testing.** Use a new aerial photo for a qualitative check. The upload has no ground truth; counts and times describe that image only.")
+        with gr.Accordion("Three-model selection on shared classes", open=True):
+            digest = hashlib.sha256(Path(weights).read_bytes()).hexdigest()
+            for csv in sorted((Path(project)/"evaluation").glob("*/comparison.csv"), reverse=True) if project else []:
+                stamp = csv.with_name("checkpoint.txt")
+                if stamp.is_file() and stamp.read_text().splitlines()[-1:] == [digest]:
+                    table = pd.read_csv(csv)
+                    if len(table) == 3 and set(table.model) == set(METHODS) and not table.isna().any().any():
+                        gr.Markdown(selection(table))
+                        gr.Dataframe(value=table, interactive=False, label="Saved validation comparison")
+                        break
+            else:
+                gr.Markdown("Run section 5 with this checkpoint to measure and select among all three models.")
     return app.launch(share=True, prevent_thread_lock=True)

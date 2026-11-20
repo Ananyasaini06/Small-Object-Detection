@@ -63,6 +63,17 @@ def small(rows):
     return [o for o in rows if o["box"][2]-o["box"][0] <= 32 and o["box"][3]-o["box"][1] <= 32]
 
 
+def selection(frame):
+    ranked = frame.sort_values(["small_AP50_pct", "latency_ms", "AP50_pct"],
+                               ascending=[False, True, False])
+    best = ranked.iloc[0]
+    fastest = frame.loc[frame.latency_ms.idxmin()]
+    return (f"Accuracy-first choice: {best.model} at {best.small_AP50_pct:.2f}% small-object AP50 "
+            f"and {best.latency_ms:.1f} ms/image. Fastest measured: {fastest.model} "
+            f"at {fastest.latency_ms:.1f} ms/image and {fastest.small_AP50_pct:.2f}% small-object AP50. "
+            "Selection prioritizes small-object AP50, then lower latency on a tie.")
+
+
 def benchmark(weights, val_dir, label_dir, destination):
     from matplotlib import pyplot as plt
     paths = sorted(val_dir.glob("*.jpg"))[:100]
@@ -93,6 +104,9 @@ def benchmark(weights, val_dir, label_dir, destination):
         records.append(row)
     frame = pd.DataFrame(records)
     frame.to_csv(destination/"comparison.csv",index=False)
+    decision = selection(frame)
+    (destination/"selection.txt").write_text(decision)
+    print(decision)
     fig, ax = plt.subplots()
     for row in records:
         ax.scatter(row["latency_ms"],row["small_AP50_pct"],label=row["model"])
