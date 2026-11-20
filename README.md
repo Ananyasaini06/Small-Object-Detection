@@ -48,7 +48,7 @@ The working notebook calls `comparison.py` for the three-model benchmark, `evalu
 
 ## Report and live presentation
 
-[Read the project report (PDF)](report/P10-report.pdf). For the live presentation, run section 5 before class. It saves the three-model measurements and selection.txt beside the speed–accuracy graph. Selection reports the overall AP50 leader, the fastest detector and the small-object AP50 leader. Section 6 shows the latest complete comparison matching the loaded checkpoint fingerprint. Use its evidence panel for the historical training curve, epoch table, tile results and any saved training outputs alongside the checkpoint.
+[Read the project report (PDF)](report/P10-report.pdf). Run Section 5 only to repeat the benchmark. It saves the three-model measurements and selection.txt beside the speed–accuracy graph. Selection reports the overall AP50 leader, the fastest detector and the small-object AP50 leader. Section 6 shows the latest complete comparison matching the loaded checkpoint fingerprint. Use its evidence panel for the historical training curve, epoch table, tile results and any saved training outputs alongside the checkpoint.
 
 For the two-day submission, Faster R-CNN remains a COCO-pretrained transfer baseline. A controlled VisDrone fine-tune needs a new classification head, a separate training and validation run, and time to evaluate the resulting checkpoint. We have no measured training throughput or guaranteed T4 session for that additional experiment. The historical accuracy-first choice is SAHI 512. The completed five-class comparison is shown below. Launch the temporary Gradio link during the presentation; the runtime must remain active.
 
@@ -64,13 +64,13 @@ The verified five-class evaluation used the same 100 VisDrone validation images 
 | YOLO11n + SAHI | 26.1914 | 17.4532 | 472.8199 | 215.49 |
 | Faster R-CNN | 24.9709 | 23.5444 | 140.7399 | 199.85 |
 
-**Choose YOLO11n for general use:** it has the highest overall AP50 and the lowest latency. **Choose Faster R-CNN when small-object AP50 is the priority:** it gains 1.7074 percentage points over YOLO11n on that metric and takes about ten times as long per image. SAHI produced the most detections here, but counts alone do not measure correctness.
+**Choose YOLO11n for general use:** it has the highest overall AP50 and the lowest measured T4 latency. **Choose Faster R-CNN when small-object AP50 is the priority:** it gains 1.7074 percentage points over YOLO11n on that metric and takes about ten times as long per image. SAHI produced the most detections here, but counts alone do not measure correctness.
 
 The historical evaluator averages across ten VisDrone classes, whereas the new evaluator averages over the five shared vehicle classes with ground truth. Both use the first 100 sorted validation JPGs, confidence 0.001, the same AP matcher and small-box limits. Both use 512-pixel SAHI slices with 20% overlap and library-default merging. Normal YOLO uses a 3000 detection cap; the SAHI wrapper uses its native cap and postprocessing. A change in the class average can reverse the ranking. Establishing the cause would require per-class scores on identical weights and software versions; the original checkpoint hash is unavailable.
 
 ## Live Demo
 
-Open the [Colab launcher](https://colab.research.google.com/github/Ananyasaini06/Small-Object-Detection/blob/main/Small_Object_Detection.ipynb), select a T4 and run **1 → 2 → 6**. Confirm Section 2 prints the recovered Drive checkpoint. Section 6 loads YOLO for full-image and sliced inference and prints a new public Gradio share URL. Use that URL while the runtime is active. After a disconnect or expired link, launch again. This path skips training and evaluation.
+Open the [Colab launcher](https://colab.research.google.com/github/Ananyasaini06/Small-Object-Detection/blob/main/Small_Object_Detection.ipynb), select a T4 and run **1 → 2 → 6**. Confirm Section 2 prints the recovered Drive checkpoint. Section 1 prints the loaded Git revision. Section 6 closes older Gradio instances in this runtime, prints the revision and both live methods, loads YOLO for full-image and sliced inference and prints a new public Gradio share URL. Use that URL while the runtime is active. After a disconnect or expired link, launch again. This path skips training and evaluation.
 
 The two live panels compare YOLO11n and YOLO11n + SAHI. Faster R-CNN remains in the recorded benchmark and Section 5 evaluation code. Its occasional zero-count live output and its measured validation AP describe different inputs and thresholds.
 

@@ -54,13 +54,19 @@ def build_demo(models, weights, project=None):
         button.click(compare,[source,threshold],[*outputs,stats],concurrency_limit=1)
         gr.Markdown("## Recorded validation comparison\nVerified results on 100 validation images and five shared vehicle classes. Counts alone cannot establish accuracy: extra boxes can include false positives.")
         verified = pd.read_csv(assets/"results/verified-five-class.csv")
-        gr.Dataframe(value=verified.rename(columns={"model":"Model", "AP50_pct":"AP50 (%)",
+        ssd = pd.read_csv(assets/"results/ssd-cpu.csv")
+        accuracy = pd.concat([verified.assign(device="T4"), ssd.assign(device="CPU")],
+                             ignore_index=True)[[*verified.columns, "device"]]
+        gr.Dataframe(value=accuracy.rename(columns={"model":"Model", "AP50_pct":"AP50 (%)",
                      "small_AP50_pct":"Small AP50 (%)", "latency_ms":"Latency (ms/image)",
-                     "detections_per_image":"Detections/image"}).round(2), interactive=False)
+                     "detections_per_image":"Detections/image", "device":"Hardware"}).round(4), interactive=False)
         gr.Markdown("**Offline SSD candidate.** COCO SSDLite320 MobileNetV3 scored 2.59% overall AP50 and 0.0461% small-object AP50. At the default display threshold it returned no shared-class detections on 60 of 100 images. The live panels use full-image and tiled YOLO.")
+        gr.BarPlot(accuracy, x="model", y="AP50_pct", title="Overall AP50 across the four configurations",
+                   x_title="Configuration", y_title="Overall AP50 (%)")
+        gr.Markdown("Only the three T4 timings are plotted together. SSD latency was measured on CPU.")
         gr.ScatterPlot(verified, x="latency_ms", y="small_AP50_pct", color="model",
                        x_title="Mean latency (ms/image)", y_title="Small-object AP50 (%)",
-                       title="Small-object accuracy versus inference time")
+                       title="Small-object accuracy versus T4 inference time")
         gr.Markdown("## Training evidence\nFinal YOLO validation: precision **39.7%**, recall **30.0%**, mAP50 **27.5%**, mAP50–95 **15.1%**.")
         gr.Markdown("**Training.** Original 15-epoch VisDrone run. The curves and table use rounded validation logs from the archived notebook.")
         gr.Image(str(assets/"figures/historical_epochs.png"), interactive=False, label="Historical validation curves")
@@ -76,7 +82,7 @@ def build_demo(models, weights, project=None):
                     "These ten-class results support SAHI 512 as the historical accuracy-first choice.")
         gr.Dataframe(value=pd.read_csv(assets/"final_tile_comparison.csv"), interactive=False)
         gr.Markdown("**Testing.** Use a new aerial photo for a qualitative check. The upload has no ground truth; counts and times describe that image only.")
-        gr.Markdown("## Final model selection\n**YOLO11n** is the general-purpose choice: it has the highest overall AP50 and the lowest latency. **Faster R-CNN** leads on small-object AP50, at about ten times YOLO11n’s latency. **SAHI** improved small-object AP50 in the earlier ten-class experiment; the two evaluations average over different classes.")
+        gr.Markdown("## Final model selection\n**YOLO11n** is the general-purpose choice: it has the highest overall AP50 and the lowest latency. **Faster R-CNN** leads on small-object AP50, at about ten times YOLO11n’s T4 latency, but returned no shared detections on some presentation images. **SAHI** improved small-object AP50 in the earlier ten-class experiment; full-image YOLO scored higher on the five shared classes. The change in class set limits direct comparison.")
         with gr.Accordion("Measurements for the loaded checkpoint", open=False):
             digest = hashlib.sha256(Path(weights).read_bytes()).hexdigest()
             for csv in sorted((Path(project)/"evaluation").glob("*/comparison.csv"), reverse=True) if project else []:
