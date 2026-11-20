@@ -2,10 +2,6 @@
 from pathlib import Path
 import numpy as np
 import pandas as pd
-from ultralytics import YOLO
-from sahi import AutoDetectionModel
-from sahi.predict import get_sliced_prediction
-
 from PIL import Image
 
 def read_small_ground_truth(image_path, label_dir):
@@ -101,6 +97,9 @@ def calculate_ap50(all_gt, all_pred, class_id):
     return float(ap)
 
 def evaluate(model_path, val_dir, label_dir, out_dir, tile=512):
+    from ultralytics import YOLO
+    from sahi import AutoDetectionModel
+    from sahi.predict import get_sliced_prediction
     out_dir.mkdir(parents=True, exist_ok=True)
     image_paths = sorted(val_dir.glob("*.jpg"))[:100]
 

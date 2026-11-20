@@ -1,35 +1,34 @@
-import gradio as gr
-import numpy as np
 from PIL import ImageDraw, ImageOps
-from sahi import AutoDetectionModel
-from sahi.predict import get_sliced_prediction
-from ultralytics import YOLO
+from comparison import Detectors, METHODS, NAMES
 
 
 def launch(weights):
-    normal = YOLO(str(weights))
-    sliced = AutoDetectionModel.from_pretrained(
-        model_type="ultralytics", model_path=str(weights),
-        confidence_threshold=0.25, device="cuda:0"
-    )
+    import gradio as gr
+    models = Detectors(weights)
 
-    def compare(image):
+    def compare(image, threshold):
         if image is None:
             raise gr.Error("Upload a JPG or PNG image.")
         image = ImageOps.exif_transpose(image).convert("RGB")
-        result = normal.predict(image, conf=0.25, verbose=False)[0]
-        tiled = get_sliced_prediction(
-            np.asarray(image), sliced, slice_height=512, slice_width=512,
-            overlap_height_ratio=0.2, overlap_width_ratio=0.2, verbose=0
-        )
-        overlay = image.copy()
-        draw = ImageDraw.Draw(overlay)
-        for obj in tiled.object_prediction_list:
-            box = obj.bbox.to_xyxy()
-            draw.rectangle(box, outline="lime", width=2)
-            draw.text(box[:2], f"{obj.category.name} {obj.score.value:.2f}", fill="yellow")
-        return result.plot(pil=False)[:, :, ::-1], overlay
+        outputs, statistics = [], []
+        for method in METHODS:
+            predictions, ms = models.predict(method, image, threshold)
+            canvas = image.copy()
+            draw = ImageDraw.Draw(canvas)
+            for obj in predictions:
+                draw.rectangle(obj["box"], outline="lime", width=2)
+                draw.text(obj["box"][:2], f"{NAMES[obj['class']]} {obj['score']:.2f}", fill="yellow")
+            outputs.append(canvas)
+            statistics.append([method, len(predictions), round(ms,1)])
+        return *outputs, statistics
 
-    gr.Interface(compare, gr.Image(type="pil", sources=["upload"]),
-                 [gr.Image(label="Normal YOLO"), gr.Image(label="SAHI 512 × 512")],
-                 title="Small-object detection in aerial scenes").launch(share=True)
+    with gr.Blocks() as app:
+        gr.Markdown("# Small-object detection in aerial scenes\nCompare bicycle, car, truck, bus and motor detections.")
+        source = gr.Image(type="pil", sources=["upload"], label="Upload a JPG or PNG aerial image")
+        threshold = gr.Slider(0.01, 0.95, value=0.25, step=0.01, label="Confidence threshold")
+        button = gr.Button("Compare detections")
+        with gr.Row():
+            outputs = [gr.Image(label=name, format="png", show_download_button=True) for name in METHODS]
+        stats = gr.Dataframe(headers=["Model","Detections","Time (ms)"], interactive=False)
+        button.click(compare,[source,threshold],[*outputs,stats],concurrency_limit=1)
+    return app.launch(share=True, prevent_thread_lock=True)
