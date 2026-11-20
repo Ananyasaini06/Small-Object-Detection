@@ -1,0 +1,2 @@
+model,device,images,AP50_pct,small_AP50_pct,latency_ms,detections_per_image,images_with_shared_detection_at_025
+SSDLite320 MobileNetV3-Large,cpu,100,2.5895543212243792,0.046110550574800846,64.35514540999066,76.57,40

@@ -13,7 +13,7 @@ METHODS = ("YOLO11n", "YOLO11n + SAHI", "Faster R-CNN")
 
 
 class Detectors:
-    def __init__(self, weights):
+    def __init__(self, weights, include_rcnn=True):
         import torch
         from ultralytics import YOLO
         from sahi import AutoDetectionModel
@@ -21,6 +21,8 @@ class Detectors:
         self.yolo = YOLO(str(weights))
         self.sahi = AutoDetectionModel.from_pretrained(model_type="ultralytics",
             model_path=str(weights), confidence_threshold=0.001, device="cuda:0")
+        if not include_rcnn:
+            return
         self.categories = FasterRCNN_ResNet50_FPN_Weights.DEFAULT.meta["categories"]
         self.rcnn = fasterrcnn_resnet50_fpn(weights=FasterRCNN_ResNet50_FPN_Weights.DEFAULT,
             box_score_thresh=0.001, box_detections_per_img=3000).eval().cuda()

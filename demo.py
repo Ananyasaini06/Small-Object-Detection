@@ -5,6 +5,9 @@ import pandas as pd
 from comparison import Detectors, METHODS, NAMES, selection
 
 
+LIVE_METHODS = METHODS[:2]
+
+
 def build_demo(models, weights, project=None):
     import gradio as gr
     assets = Path(__file__).resolve().parent
@@ -14,9 +17,8 @@ def build_demo(models, weights, project=None):
             raise gr.Error("Upload a JPG or PNG image.")
         image = ImageOps.exif_transpose(image).convert("RGB")
         outputs, statistics = [], []
-        diagnostics = []
-        for method in METHODS:
-            predictions, ms = models.predict(method, image, threshold, diagnostics if method == METHODS[2] else None)
+        for method in LIVE_METHODS:
+            predictions, ms = models.predict(method, image, threshold)
             canvas = image.copy()
             draw = ImageDraw.Draw(canvas)
             for obj in predictions:
@@ -29,7 +31,7 @@ def build_demo(models, weights, project=None):
                 draw.text((x + 2, y), label, fill="white")
             outputs.append(canvas)
             statistics.append([method, len(predictions), round(ms,1)])
-        return *outputs, statistics, diagnostics
+        return *outputs, statistics
 
     css = """
     .gradio-container {max-width: 1320px !important; margin: auto;}
@@ -37,8 +39,8 @@ def build_demo(models, weights, project=None):
     #overview h1, #overview p {color: #f2fffc;}
     """
     with gr.Blocks(title="P10 · Aerial object detection", theme=gr.themes.Soft(primary_hue="teal"), css=css) as app:
-        gr.Markdown("# Small-object detection in aerial scenes\n**Project overview** · Vehicles can occupy only a few pixels in a drone image. Compare how three detectors handle the same scene.", elem_id="overview")
-        gr.Markdown("## Live detection\nUpload a JPG or PNG, or select a VisDrone sample. All three panels use the same five vehicle classes.")
+        gr.Markdown("# Small-object detection in aerial scenes\n**Project overview** · Vehicles can occupy only a few pixels in a drone image. Compare full-image YOLO with the same weights applied to overlapping tiles.", elem_id="overview")
+        gr.Markdown("## Live detection\nUpload a JPG or PNG, or select a VisDrone sample. Both panels use the same five vehicle classes.")
         with gr.Row():
             source = gr.Image(type="pil", sources=["upload"], label="Aerial image", height=235)
             with gr.Column(min_width=240):
@@ -47,17 +49,15 @@ def build_demo(models, weights, project=None):
         threshold = gr.Slider(0.01, 0.95, value=0.25, step=0.01, label="Confidence threshold")
         button = gr.Button("Compare detections", variant="primary")
         with gr.Row():
-            outputs = [gr.Image(label=name, min_width=230, height=260, interactive=False, format="png", show_download_button=True) for name in METHODS]
+            outputs = [gr.Image(label=name, min_width=230, height=260, interactive=False, format="png", show_download_button=True) for name in LIVE_METHODS]
         stats = gr.Dataframe(headers=["Model","Detections","Time (ms)"], interactive=False)
-        with gr.Accordion("Why did Faster R-CNN return this count?", open=False):
-            gr.Markdown("COCO predictions after native postprocessing at a 0.001 score floor, before the shared-class filter. Only shared labels above the slider threshold appear in the image. The live time includes this diagnostic pass.")
-            raw = gr.Dataframe(headers=["COCO label", "Confidence", "VisDrone mapping", "Kept for display"], interactive=False)
-        button.click(compare,[source,threshold],[*outputs,stats,raw],concurrency_limit=1)
-        gr.Markdown("## Model comparison\nVerified results on 100 validation images and five shared vehicle classes. Counts alone cannot establish accuracy: extra boxes can include false positives.")
+        button.click(compare,[source,threshold],[*outputs,stats],concurrency_limit=1)
+        gr.Markdown("## Recorded validation comparison\nVerified results on 100 validation images and five shared vehicle classes. Counts alone cannot establish accuracy: extra boxes can include false positives.")
         verified = pd.read_csv(assets/"results/verified-five-class.csv")
         gr.Dataframe(value=verified.rename(columns={"model":"Model", "AP50_pct":"AP50 (%)",
                      "small_AP50_pct":"Small AP50 (%)", "latency_ms":"Latency (ms/image)",
                      "detections_per_image":"Detections/image"}).round(2), interactive=False)
+        gr.Markdown("**Offline SSD candidate.** COCO SSDLite320 MobileNetV3 scored 2.59% overall AP50 and 0.0461% small-object AP50. At the default display threshold it returned no shared-class detections on 60 of 100 images. The live panels use full-image and tiled YOLO.")
         gr.ScatterPlot(verified, x="latency_ms", y="small_AP50_pct", color="model",
                        x_title="Mean latency (ms/image)", y_title="Small-object AP50 (%)",
                        title="Small-object accuracy versus inference time")
@@ -96,5 +96,5 @@ def build_demo(models, weights, project=None):
 
 
 def launch(weights, project=None):
-    app = build_demo(Detectors(weights), weights, project)
+    app = build_demo(Detectors(weights, include_rcnn=False), weights, project)
     return app.launch(share=True, prevent_thread_lock=True)

@@ -70,10 +70,23 @@ The historical evaluator averages across ten VisDrone classes, whereas the new e
 
 ## Live Demo
 
-Open the [Colab launcher](https://colab.research.google.com/github/Ananyasaini06/Small-Object-Detection/blob/main/Small_Object_Detection.ipynb), select a T4 and run **1 → 2 → 6**. Confirm Section 2 prints the recovered Drive checkpoint. Section 6 loads both detectors and prints a new public Gradio share URL. Use that URL while the runtime is active. After a disconnect or expired link, launch again. This path skips training and evaluation.
+Open the [Colab launcher](https://colab.research.google.com/github/Ananyasaini06/Small-Object-Detection/blob/main/Small_Object_Detection.ipynb), select a T4 and run **1 → 2 → 6**. Confirm Section 2 prints the recovered Drive checkpoint. Section 6 loads YOLO for full-image and sliced inference and prints a new public Gradio share URL. Use that URL while the runtime is active. After a disconnect or expired link, launch again. This path skips training and evaluation.
 
-For a zero Faster R-CNN count, expand the diagnostics under the image panels. Check whether candidates belong to other COCO classes or fall below the slider. The table includes native postprocessed candidates before mapping. A zero count on one image does not establish zero validation AP.
+The two live panels compare YOLO11n and YOLO11n + SAHI. Faster R-CNN remains in the recorded benchmark and Section 5 evaluation code. Its occasional zero-count live output and its measured validation AP describe different inputs and thresholds.
 
 **Export the measured comparison:** Run updated Section 7 with Drive mounted and the checkpoint recovered. Its small github-results ZIP contains the matching benchmark files under results/<run ID>/. Extract those files for GitHub; keep weights, the full backup and VisDrone in Drive.
 
-The Live Detection section includes three unannotated VisDrone2019-DET validation images. Select a thumbnail and click **Compare detections**. Open the Faster R-CNN diagnostics to inspect each postprocessed COCO candidate, its confidence and whether it passed the display filters. [Sample image source](https://huggingface.co/datasets/banu4prasad/VisDrone-Dataset/tree/62fc5e7387775e8f1f4fa5e027555024124763fa/VisDrone2019-DET-val/images)
+The Live Detection section includes three unannotated VisDrone2019-DET validation images. Select a thumbnail and click **Compare detections**. [Sample image source](https://huggingface.co/datasets/banu4prasad/VisDrone-Dataset/tree/62fc5e7387775e8f1f4fa5e027555024124763fa/VisDrone2019-DET-val/images)
+
+### SSD MobileNetV3 candidate
+
+Torchvision SSDLite320 MobileNetV3-Large (COCO V1) loaded and ran on the first 100 sorted VisDrone validation images. It scored **2.59% overall AP50** and **0.0461% small-object AP50**. At a 0.25 display threshold it returned at least one shared-class detection on 40 images and none on 60. At the 0.001 evaluation floor it averaged 76.57 shared detections/image. Its native SSD postprocessing and fixed 320-pixel input were used. The offline benchmark used PyTorch 2.7.1 and Torchvision 0.22.1 on CPU; its 64.36 ms/image timing cannot be ranked against the T4 times above. [SSD measurement](results/ssd-cpu.csv)
+
+The candidate uses the same five-class mapping, box-size rule and AP matcher as the verified YOLO runs. The images and converted labels came from the VisDrone2019-DET validation mirror linked above. To repeat on the Colab dataset, run this optional command after sections 1–3 (choose a new output filename on repeat):
+
+```python
+subprocess.run([sys.executable, str(repo / "ssd_candidate.py"), str(val_dir), str(label_dir),
+                str(project / "ssd-t4.csv"), "--device", "cuda"], check=True)
+```
+
+Keep YOLO11n as the primary live model and SAHI as the tiled comparison. For a future distinct architecture, a VisDrone-fine-tuned Faster R-CNN would be a better candidate to test than presenting the weak COCO SSD baseline. Its live usefulness would need separate verification.
