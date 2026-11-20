@@ -21,10 +21,11 @@ class Detectors:
         self.yolo = YOLO(str(weights))
         self.sahi = AutoDetectionModel.from_pretrained(model_type="ultralytics",
             model_path=str(weights), confidence_threshold=0.001, device="cuda:0")
+        self.categories = FasterRCNN_ResNet50_FPN_Weights.DEFAULT.meta["categories"]
         self.rcnn = fasterrcnn_resnet50_fpn(weights=FasterRCNN_ResNet50_FPN_Weights.DEFAULT,
             box_score_thresh=0.001, box_detections_per_img=3000).eval().cuda()
 
-    def predict(self, method, image, threshold):
+    def predict(self, method, image, threshold, diagnostics=None):
         import torch
         from torchvision.transforms.functional import to_tensor
         from sahi.predict import get_sliced_prediction
@@ -40,10 +41,19 @@ class Detectors:
             rows = [[*o.bbox.to_xyxy(), o.score.value, o.category.id] for o in result.object_prediction_list]
         else:
             with torch.inference_mode():
-                self.rcnn.roi_heads.score_thresh = threshold
+                self.rcnn.roi_heads.score_thresh = min(0.001, threshold) if diagnostics is not None else threshold
                 out = self.rcnn([to_tensor(image).cuda()])[0]
-            rows = [[*box, score, COCO[label]] for box, score, label in zip(
-                out["boxes"].cpu().tolist(), out["scores"].cpu().tolist(), out["labels"].cpu().tolist()) if label in COCO]
+            labels = out["labels"].cpu().tolist()
+            scores = out["scores"].cpu().tolist()
+            boxes = out["boxes"].cpu().tolist()
+            rows = [[*box, score, COCO[label]] for box, score, label in zip(boxes, scores, labels)
+                    if label in COCO]
+            if diagnostics is not None:
+                categories = self.categories
+                for label in sorted(set(labels)):
+                    values = [s for c, s in zip(labels, scores) if c == label]
+                    diagnostics.append([categories[label], len(values), round(max(values), 4),
+                                        sum(s >= threshold for s in values), label in COCO])
         preds = [{"class": int(c), "score": s, "box": [x,y,r,b]} for x,y,r,b,s,c in rows if c in NAMES and s >= threshold]
         torch.cuda.synchronize()
         return preds, (perf_counter()-start)*1000

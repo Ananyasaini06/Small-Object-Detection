@@ -51,3 +51,25 @@ The working notebook calls `comparison.py` for the three-model benchmark, `evalu
 [Read the project report (PDF)](report/P10-report.pdf). For the live presentation, run section 5 before class. It saves the three-model measurements and selection.txt beside the speed–accuracy graph. Selection prioritizes shared-class small AP50, then latency, then overall AP50. Section 6 shows the latest complete comparison matching the loaded checkpoint fingerprint. Use its evidence panel for the historical training curve, epoch table, tile results and any saved training outputs alongside the checkpoint.
 
 For the two-day submission, Faster R-CNN remains a COCO-pretrained transfer baseline. A controlled VisDrone fine-tune needs a new classification head, a separate training and validation run, and time to evaluate the resulting checkpoint. We have no measured training throughput or guaranteed T4 session for that additional experiment. The historical accuracy-first choice is SAHI 512. Run the shared-class benchmark to determine the three-way choice. Launch the temporary Gradio link during the presentation; the runtime must remain active.
+
+## Completed Colab run
+
+The completed 15-epoch T4 run reported precision 39.7%, recall 30.0%, mAP50 27.5% and mAP50–95 15.1%. Its best.pt and last.pt were reported saved in MyDrive/Small-Object-Detection/final_baseline/weights.
+
+| Configuration | Five-class AP50 | Five-class small AP50 |
+|---|---:|---:|
+| YOLO11n | 34.24% | 21.84% |
+| YOLO11n + SAHI | 26.19% | 17.45% |
+| Faster R-CNN | See the saved Section 5 comparison.csv in Drive | Same file |
+
+These two rows were transcribed from the project owner's Colab results. Full-image YOLO leads both available five-class measures. Its historical timed pass was also quicker (24.26 vs 207.02 ms/image); use the current CSV for a matched speed comparison. The three-way selection in the demo reads the actual CSV for the recovered checkpoint.
+
+The historical evaluator averages across ten VisDrone classes, whereas the new evaluator averages over the five shared vehicle classes with ground truth. Both use the first 100 sorted validation JPGs, confidence 0.001, the same AP matcher and small-box limits. Both use 512-pixel SAHI slices with 20% overlap and library-default merging. Normal YOLO uses a 3000 detection cap; the SAHI wrapper uses its native cap and postprocessing. A change in the class average can reverse the ranking. Establishing the cause would require per-class scores on identical weights and software versions; the original checkpoint hash is unavailable.
+
+## Live Demo
+
+Open the [Colab launcher](https://colab.research.google.com/github/Ananyasaini06/Small-Object-Detection/blob/main/Small_Object_Detection.ipynb), select a T4 and run **1 → 2 → 6**. Confirm Section 2 prints the recovered Drive checkpoint. Section 6 loads both detectors and prints a new public Gradio share URL. Use that URL while the runtime is active. After a disconnect or expired link, launch again. This path skips training and evaluation.
+
+For a zero Faster R-CNN count, expand the diagnostics under the image panels. Check whether candidates belong to other COCO classes or fall below the slider. The table includes native postprocessed candidates before mapping. A zero count on one image does not establish zero validation AP.
+
+**Export the measured comparison:** Run updated Section 7 with Drive mounted and the checkpoint recovered. Its small github-results ZIP contains the matching benchmark files under results/<run ID>/. Extract those files for GitHub; keep weights, the full backup and VisDrone in Drive. To finish the three-model table, share that small ZIP or its comparison.csv.
