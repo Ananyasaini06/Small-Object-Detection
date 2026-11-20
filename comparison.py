@@ -78,10 +78,15 @@ def selection(frame):
                                ascending=[False, True, False])
     best = ranked.iloc[0]
     fastest = frame.loc[frame.latency_ms.idxmin()]
-    return (f"Accuracy-first choice: {best.model} at {best.small_AP50_pct:.2f}% small-object AP50 "
-            f"and {best.latency_ms:.1f} ms/image. Fastest measured: {fastest.model} "
-            f"at {fastest.latency_ms:.1f} ms/image and {fastest.small_AP50_pct:.2f}% small-object AP50. "
-            "Selection prioritizes small-object AP50, then lower latency on a tie.")
+    overall = frame.sort_values(["AP50_pct", "latency_ms"], ascending=[False, True]).iloc[0]
+    if overall.model == fastest.model:
+        summary = f"Recommended for overall accuracy and speed: {overall.model}."
+    else:
+        summary = f"Overall AP50 leader: {overall.model}. Fastest: {fastest.model}."
+    return (f"{summary} Highest overall AP50: {overall.AP50_pct:.4f}%. "
+            f"Lowest latency: {fastest.latency_ms:.4f} ms/image. "
+            f"For small-object accuracy, choose {best.model}: {best.small_AP50_pct:.4f}% "
+            f"small-object AP50 at {best.latency_ms:.4f} ms/image.")
 
 
 def benchmark(weights, val_dir, label_dir, destination):

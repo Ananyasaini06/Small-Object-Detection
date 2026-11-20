@@ -1,0 +1,4 @@
+model,AP50_pct,small_AP50_pct,latency_ms,detections_per_image
+YOLO11n,34.2359,21.8370,14.1310,192.48
+YOLO11n + SAHI,26.1914,17.4532,472.8199,215.49
+Faster R-CNN,24.9709,23.5444,140.7399,199.85

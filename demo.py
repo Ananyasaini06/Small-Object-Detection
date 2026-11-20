@@ -68,5 +68,8 @@ def launch(weights, project=None):
                             gr.Image(str(graph), label="Small-object accuracy versus latency", interactive=False)
                         break
             else:
-                gr.Markdown("Run section 5 with this checkpoint to measure and select among all three models.")
+                table = pd.read_csv(assets/"results"/"verified-five-class.csv")
+                gr.Markdown("Verified project benchmark on 100 validation images (five shared classes).")
+                gr.Markdown(selection(table))
+                gr.Dataframe(value=table, interactive=False, label="Verified project comparison")
     return app.launch(share=True, prevent_thread_lock=True)
