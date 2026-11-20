@@ -48,7 +48,7 @@ The working notebook calls `comparison.py` for the three-model benchmark, `evalu
 
 ## Report and live presentation
 
-[Read the project report (PDF)](report/P10-report.pdf). Run Section 5 only to repeat the benchmark. It saves the three-model measurements and selection.txt beside the speed–accuracy graph. Selection reports the overall AP50 leader, the fastest detector and the small-object AP50 leader. Section 6 shows the latest complete comparison matching the loaded checkpoint fingerprint. Use its evidence panel for the historical training curve, epoch table, tile results and any saved training outputs alongside the checkpoint.
+[Read the project report (PDF)](report/Small_Object_Detection_Report.pdf). Run Section 5 only to repeat the benchmark. It saves the three-model measurements and selection.txt beside the speed–accuracy graph. Selection reports the overall AP50 leader, the fastest detector and the small-object AP50 leader. Section 6 shows the latest complete comparison matching the loaded checkpoint fingerprint. Use its evidence panel for the historical training curve, epoch table, tile results and any saved training outputs alongside the checkpoint.
 
 For the two-day submission, Faster R-CNN remains a COCO-pretrained transfer baseline. A controlled VisDrone fine-tune needs a new classification head, a separate training and validation run, and time to evaluate the resulting checkpoint. We have no measured training throughput or guaranteed T4 session for that additional experiment. The historical accuracy-first choice is SAHI 512. The completed five-class comparison is shown below. Launch the temporary Gradio link during the presentation; the runtime must remain active.
 
