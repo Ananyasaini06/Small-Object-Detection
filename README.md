@@ -88,7 +88,7 @@ These results suggest a trade-off between detection performance and inference sp
 
 The experiments were developed in Google Colab.
 
-1. Open `P10_Small_Object_Detection.ipynb` in Google Colab.
+1. Open `Small_Object_Detection.ipynb` in Google Colab.
 2. Select a GPU runtime.
 3. Install the required packages, including Ultralytics and SAHI.
 4. Download and prepare the VisDrone dataset.
@@ -107,3 +107,11 @@ The trained model checkpoint and dataset are not included in this repository.
 ## Project Status
 
 The initial model training, sliced inference experiments, tile-size comparison, and preliminary visual analysis are complete. Full validation and more rigorous evaluation remain future work.
+
+## Submission workflow
+
+[Open the main notebook in Colab](https://colab.research.google.com/github/Ananyasaini06/Small-Object-Detection/blob/main/Small_Object_Detection.ipynb). Select a T4 GPU and run cells 1 and 2 to install dependencies and mount Drive. Set `manual` in cell 2 for a trusted checkpoint outside the documented project directories. Check older Drive folders before training. The original runtime stored weights under `/content/P10_runs/final_baseline/weights/`.
+
+For evaluation, run cell 3 to download and convert VisDrone. If recovery failed, enable TRAIN in cell 4 and run it once. Ultralytics writes best.pt and last.pt under MyDrive/Small-Object-Detection/final_baseline*/weights. Cell 5 calls evaluate.py and saves new CSVs to the project's evaluation directory on Drive. Run cell 6 and upload a JPG or PNG to compare full-frame and sliced predictions at confidence 0.25. The temporary Gradio share link is public while running. With recovered weights the demo needs only cells 1, 2 and 6.
+
+The corrected historical CSV in P10_day4_corrected_results.zip records **16.38% normal YOLO and 28.42% SAHI** on the first 100 sorted validation JPGs. The evaluator filters boxes with both dimensions at most 32 pixels, uses confidence 0.001 and averages per-class AP50. SAHI uses 20% overlap. A newly trained model can produce different results. The original experimental cells, including latency, plotting and tile experiments, are preserved in archive/Small_Object_Detection.ipynb.
